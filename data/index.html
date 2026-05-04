@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="./style.css">
+    <title>ESP32 WebSocket Server</title>
+</head>
+
+<body>
+    <p>latest temperature: <span id="state">%STATE%</span></p>
+    <div class="switch">
+        <input type="range" min="1" max="30" value="5" step="1" class="slider" id="poll">
+        <p id="poll_b">record every 5 seconds</p>
+    </div>
+    
+
+    <input type="range" min="0" max="300" value="100" step="10" class="slider" id="max2">
+    <p id="max_b">record for 100 seconds</p>
+    <input id="run-btn" type="button" value="run">
+
+    <div id="graph"></div>
+
+    <table id="dtable">
+        <tr>
+            <th>time /s</th>
+            <th>temperature /oC</th>
+        </tr>
+    </table>
+
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script type="module" src="./index.js"></script>
+    <script type="module" src="./graph.js"></script>
+</body>
+
+</html>
