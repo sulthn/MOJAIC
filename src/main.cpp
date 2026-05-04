@@ -26,10 +26,6 @@ const char *password = "11072008";
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 
-const char index_html[] PROGMEM = R"rawliteral(
-
-)rawliteral";
-
 void handleWebSocketMessage(void *arg, uint8_t *data, size_t len)
 {
     AwsFrameInfo *info = (AwsFrameInfo *)arg;
