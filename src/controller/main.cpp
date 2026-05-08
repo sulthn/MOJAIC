@@ -5,20 +5,19 @@
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 
+#include "Wire.h"
 #include "LittleFS.h"
 
-#define LED 23
-#define ANG 34
+#include "shared_defs.h"
+
+#define LED_PIN 23
+#define ANALOG_PIN 34
 
 #define VBE 0.58f
 #define slope 0.002f
 #define Tref 21.0f
 
-double val = 0.0f;
-double val_history = 0.0f;
-double temp_history = 0.0f;
-double temp = 0.0f;
-int poll = 0;
+double temperature = 0.0f;
 
 const char *ssid = "martabak telor";
 const char *password = "11072008";
@@ -34,7 +33,7 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len)
         data[len] = 0;
         if (strcmp((char *)data, "toggle") == 0)
         {
-            ws.textAll(String(temp_history));
+            ws.textAll(String(temperature));
         }
     }
 }
@@ -65,18 +64,20 @@ String processor(const String &var)
 {
     if (var == "STATE")
     {
-        return String(temp_history);
+        return String(temperature);
     }
     return String();
 }
-
-unsigned long previous = 0;
 
 void setup()
 {
     Serial.begin(115200);
 
-    pinMode(LED, OUTPUT);
+    pinMode(LED_PIN, OUTPUT);
+
+    Wire.begin();
+    //Wire.setClock(100000);
+    Wire.setTimeout(5);
 
     if (!LittleFS.begin(true))
     {
@@ -113,26 +114,73 @@ void setup()
     server.begin();
 }
 
-const long interval = 50;
+void requestDHT()
+{
+    temperature_union dht_t;
+    dht_rh dht_rhh;
+
+    dht_t.temp = 0.0f;
+    dht_rhh.rh = 0.0f;
+
+    int idx = 0;
+
+    Wire.requestFrom(HUMIDITY_ADDRESS, 8);
+
+    while (Wire.available())
+    {
+        if (idx < 4)
+        {
+            dht_rhh.rh_i[idx] = Wire.read();
+        }
+        else
+        {
+            dht_t.temp_i[idx % 4] = Wire.read();
+        }
+        idx++;
+    }
+
+    Serial.printf("DHT = %.2f%%, %.2f°C\n", dht_rhh.rh, dht_t.temp);
+}
+
+void requestDS()
+{
+    static temperature_union temp_r;
+    float temp_t = temp_r.temp;
+    int idx = 0;
+
+    Wire.requestFrom(TEMPERATURE_ADDRESS, 4);
+
+    while (Wire.available())
+    {
+        temp_r.temp_i[idx] = Wire.read();
+        idx++;
+    }
+
+    if (!Wire.getTimeout())
+    {
+        temp_r.temp = temp_t;
+    }
+
+    temperature = temp_r.temp;
+
+    Serial.printf("DS = %.2f°C\n", temp_r.temp);    
+}
+
+const long interval = 200;
+unsigned long previous = 0;
 
 void loop()
 {
     unsigned long current = millis();
-    val = ((double)analogRead(ANG) / 4096.0f) * 3.30f + 0.11f;
-    val_history += val;
-    temp += (VBE - val) / slope + Tref;
-    poll = poll + 1;
 
     if (current - previous >= interval)
     {
         previous = current;
 
-        temp_history = temp / poll;
-        val_history = val_history / poll;
-        temp = 0.0f;
-        poll = 0;
+        requestDHT();
+        requestDS();
 
-        //Serial.printf("%f (%f)\n", temp_history, val_history);
+        // Serial.printf("%f (%f)\n", temp_history, val_history);
     }
 
     ws.cleanupClients();

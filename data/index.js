@@ -25,7 +25,7 @@ window.addEventListener('load', function () {
         temperature.push(
             {
                 time: (elapsed - delay) / 1000, 
-                temp: Number((+event.data).toFixed(1))
+                temp: +event.data
             }
         );
         /*if (temperature.length > temperature_max) {
@@ -35,7 +35,7 @@ window.addEventListener('load', function () {
         console.log(event.data, (+event.data).toFixed(1), temperature[Math.max(temperature.length - 1, 0)]);
 
         document.getElementById("graph").replaceChildren(chart(delay));
-        document.getElementById("dtable").innerHTML += "<tr><td>" + ((elapsed - delay) / 1000) + "</td><td>" + (+event.data).toFixed(1) + "</td></tr>";
+        document.getElementById("dtable").innerHTML += "<tr><td>" + ((elapsed - delay) / 1000) + "</td><td>" + +event.data + "</td></tr>";
     };
 
     let intervalid;
